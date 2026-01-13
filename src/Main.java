@@ -29,6 +29,8 @@ public class Main {
                     sc.nextLine();
                     String name=sc.nextLine();
 
+                 System.out.println("Enter Password:");
+                 String password=sc.nextLine();            
                     System.out.print("Choose Account Type(Saving/Current):");
                     String accountType=sc.next().toLowerCase();
                     System.out.print("Enter Initial Deposit:");
