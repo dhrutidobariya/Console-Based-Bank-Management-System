@@ -8,12 +8,16 @@ import Model.Transaction;
 
 import javax.swing.event.ListDataEvent;
 import java.util.*;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 public class BankService {
 
     Map<Long, Account> account = new HashMap<>();
     Map<Long, List<Transaction>> transaction = new HashMap<>();// one ccount can make multiple transaction so only put transaction object override previous transaction
 
+    private static final Logger logger = Logger.getLogger(BankService.class.getName());
 
     long accountNumber=1000;
     long nextAccountNumber=accountNumber;
@@ -27,6 +31,9 @@ public class BankService {
         {
              Account acc=new Account(nextAccountNumber,accountHolderName,type,balance);
             account.put(nextAccountNumber,acc);
+
+            logger.log(Level.INFO, "Account created successfully. Account Number: {0}",
+                    nextAccountNumber);
                 return nextAccountNumber;
         }
          return -1;
@@ -41,13 +48,19 @@ public class BankService {
     //To deposit money into a valid account and record the transaction safely.
     public boolean depositMoney(long accountNumber,double amount)
     {
+        Supplier<String> StrSupplier
+                = () -> "Invalid deposit amount";
         // 1. Check if account exists
         if (!account.containsKey(accountNumber)) {
+            logger.severe("Account not found.");
             return false;
         }
         // 2. Validate amount
         if (amount <= 0) {
+           // logger.log(Level.SEVERE,new RuntimeException("Error"),StrSupplier);
+            logger.warning("Invalid deposit amount.");
             return false;
+
         }
 
         // 3. Get existing account
@@ -63,6 +76,10 @@ public class BankService {
             // 6. Store transaction (one account → many transactions)
             transaction.computeIfAbsent(accountNumber, k -> new ArrayList<>())
                     .add(trans);
+
+            logger.log(Level.INFO,
+                    "₹{0} deposited into Account {1}",
+                    new Object[]{amount, accountNumber});
             /**
              * if (!transaction.containsKey(accountNumber)) {
              *     transaction.put(accountNumber, new ArrayList<>());
@@ -79,10 +96,14 @@ public class BankService {
     //Withdraw money from a valid account, only if sufficient balance exists, and record the transaction.
     public boolean withdrawMoney(long accountNumber,double amount)
     {
-        if(!account.containsKey(accountNumber))
+        if(!account.containsKey(accountNumber)){
+            logger.warning("Account not found.");
+            return false;}
+        if (amount <=0){
+            logger.warning("Invalid withdrawal amount.");
+
             return false;
-        if (amount <=0)
-            return false;
+        }
         Account acc=account.get(accountNumber);
 
         if(acc.withdraw(amount))
@@ -90,6 +111,9 @@ public class BankService {
             Transaction trans=new Transaction(accountNumber, "WITHDRAW", amount);
             transaction.computeIfAbsent(accountNumber, k -> new ArrayList<>())
                     .add(trans);
+            logger.log(Level.INFO,
+                    "₹{0} withdrawn from Account {1}",
+                    new Object[]{amount, accountNumber});
             return true;
         }
 
@@ -101,7 +125,8 @@ public class BankService {
     public double getBalance(long accountNumber)
     {
         if (!account.containsKey(accountNumber))
-        {   return -1;
+        {   logger.warning("Account not found while checking balance.");
+            return -1;
         }
         Account acc=account.get(accountNumber);
         return acc.getBalance();
@@ -111,6 +136,7 @@ public class BankService {
     {
         if (!account.containsKey(accountNumber))
         {
+            logger.warning("Account not found while fetching transaction history.");
             return new ArrayList<>();
 
         }
